@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { ImgURL } from '../data/DataService';
 
 export default function Header({ champions, version }) {
   const [query, setQuery] = useState('');
@@ -8,9 +8,12 @@ export default function Header({ champions, version }) {
   const navigate = useNavigate();
   const wrapRef = useRef(null);
 
-  const filtered = query.trim().length > 0
+  const filtered = query.trim().length > 0 && champions
     ? champions
-        .filter((c) => c.name.toLowerCase().includes(query.toLowerCase()) || c.id.toLowerCase().includes(query.toLowerCase()))
+        .filter((c) =>
+          c.name.toLowerCase().includes(query.toLowerCase()) ||
+          c.id.toLowerCase().includes(query.toLowerCase())
+        )
         .slice(0, 8)
     : [];
 
@@ -62,8 +65,9 @@ export default function Header({ champions, version }) {
             {filtered.map((c) => (
               <div key={c.id} className="search-result-item" onClick={() => onPick(c.id)}>
                 <img
-                  src={`https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${c.image.full}`}
+                  src={ImgURL.champion(version, c.image.full)}
                   alt={c.name}
+                  loading="lazy"
                 />
                 <div>
                   <div style={{ fontWeight: 600 }}>{c.name}</div>
@@ -71,6 +75,13 @@ export default function Header({ champions, version }) {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+        {showResults && query.length > 0 && filtered.length === 0 && (
+          <div className="search-results">
+            <div style={{ padding: 12, color: 'var(--text-muted)', fontSize: 13, textAlign: 'center' }}>
+              "{query}" ile eşleşen şampiyon yok
+            </div>
           </div>
         )}
       </div>

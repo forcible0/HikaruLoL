@@ -1,49 +1,52 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { computeTier } from '../data/buildData';
+import { ImgURL } from '../data/DataService';
 
 const ROLES = [
-  { id: 'all', name: 'Tümü', color: '#6b7585', icon: 'ALL' },
-  { id: 'top', name: 'Top', color: 'var(--role-top)', icon: 'TOP' },
-  { id: 'jungle', name: 'Jungle', color: 'var(--role-jungle)', icon: 'JNG' },
-  { id: 'middle', name: 'Mid', color: 'var(--role-mid)', icon: 'MID' },
-  { id: 'bottom', name: 'ADC', color: 'var(--role-bot)', icon: 'BOT' },
-  { id: 'support', name: 'Sup', color: 'var(--role-support)', icon: 'SUP' },
+  { id: 'all', name: 'Tümü' },
+  { id: 'top', name: 'Top' },
+  { id: 'jungle', name: 'Jng' },
+  { id: 'middle', name: 'Mid' },
+  { id: 'bottom', name: 'ADC' },
+  { id: 'support', name: 'Sup' },
 ];
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+const TAG_TO_ROLES = {
+  top: ['Fighter', 'Tank'],
+  jungle: ['Fighter', 'Assassin', 'Tank'],
+  middle: ['Mage', 'Assassin'],
+  bottom: ['Marksman'],
+  support: ['Support', 'Mage', 'Tank'],
+};
 
 export default function ChampionsList({ champions, version }) {
   const [roleFilter, setRoleFilter] = useState('all');
   const [letterFilter, setLetterFilter] = useState('all');
   const navigate = useNavigate();
 
-  // Her şampiyon için tier hesapla (memoize)
-  const tiered = useMemo(() => {
-    return champions.map((c) => ({ ...c, ...computeTier(c) }));
-  }, [champions]);
+  const filtered = useMemo(() => {
+    if (!champions || champions.length === 0) return [];
+    return champions
+      .filter((c) => {
+        if (roleFilter === 'all') return true;
+        const allowed = TAG_TO_ROLES[roleFilter] || [];
+        return (c.tags || []).some((t) => allowed.includes(t));
+      })
+      .filter((c) => letterFilter === 'all' || c.name?.[0]?.toUpperCase() === letterFilter)
+      .sort((a, b) => {
+        const tierOrder = { S: 0, A: 1, B: 2, C: 3, D: 4, F: 5 };
+        const ta = tierOrder[a.tier] ?? 9;
+        const tb = tierOrder[b.tier] ?? 9;
+        if (ta !== tb) return ta - tb;
+        return parseFloat(b.winRate || 0) - parseFloat(a.winRate || 0);
+      });
+  }, [champions, roleFilter, letterFilter]);
 
-  // Role filterleme (tag'lere göre tahmin)
-  const TAG_TO_ROLES = {
-    top: ['Fighter', 'Tank'],
-    jungle: ['Fighter', 'Assassin', 'Tank'],
-    middle: ['Mage', 'Assassin'],
-    bottom: ['Marksman'],
-    support: ['Support', 'Mage', 'Tank'],
-  };
-
-  const filtered = tiered
-    .filter((c) => {
-      if (roleFilter === 'all') return true;
-      const allowed = TAG_TO_ROLES[roleFilter] || [];
-      return c.tags.some((t) => allowed.includes(t));
-    })
-    .filter((c) => letterFilter === 'all' || c.name[0].toUpperCase() === letterFilter)
-    .sort((a, b) => {
-      const tierOrder = { S: 0, A: 1, B: 2, C: 3, D: 4, F: 5 };
-      if (tierOrder[a.tier] !== tierOrder[b.tier]) return tierOrder[a.tier] - tierOrder[b.tier];
-      return parseFloat(b.winRate) - parseFloat(a.winRate);
-    });
+  if (!champions || champions.length === 0) {
+    return <div className="empty">Şampiyon verisi yüklenemedi</div>;
+  }
 
   return (
     <div className="champions-page">
@@ -55,23 +58,17 @@ export default function ChampionsList({ champions, version }) {
               className={'role-btn' + (roleFilter === r.id ? ' active' : '')}
               onClick={() => setRoleFilter(r.id)}
             >
-              <span
-                className="role-icon"
-                style={{ background: r.color, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 800 }}
-              >
-                {r.icon}
-              </span>
               {r.name}
             </button>
           ))}
         </div>
         <select
-          className="role-btn"
+          className="search-input"
           value={letterFilter}
           onChange={(e) => setLetterFilter(e.target.value)}
-          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', padding: '6px 10px' }}
+          style={{ width: 120, padding: '6px 10px' }}
         >
-          <option value="all">Tüm harfler</option>
+          <option value="all">A-Z</option>
           {ALPHABET.map((l) => (
             <option key={l} value={l}>{l}</option>
           ))}
@@ -90,16 +87,19 @@ export default function ChampionsList({ champions, version }) {
             title={`${c.name} - ${c.title}`}
           >
             <img
-              src={`https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${c.image.full}`}
+              src={ImgURL.champion(version, c.image.full)}
               alt={c.name}
               loading="lazy"
+              onError={(e) => { e.target.style.opacity = 0.3; }}
             />
-            <span
-              className="tier-badge"
-              style={{ background: `var(--tier-${c.tier.toLowerCase()})` }}
-            >
-              {c.tier}
-            </span>
+            {c.tier && (
+              <span
+                className="tier-badge"
+                style={{ background: `var(--tier-${c.tier.toLowerCase()})` }}
+              >
+                {c.tier}
+              </span>
+            )}
             <div className="champion-card-name">{c.name}</div>
           </div>
         ))}
