@@ -1,11 +1,10 @@
 @echo off
-REM HikaruLoL - Windows başlatma scripti
+REM HikaruLoL - Windows baslatma scripti
 echo ========================================
 echo   HikaruLoL - League of Legends Builder
 echo ========================================
 echo.
 
-REM İlk çalıştırmada node_modules yoksa yükle
 if not exist "node_modules" (
   echo [1/3] Ilk kurulum - npm paketleri yukleniyor...
   call npm install
@@ -16,8 +15,8 @@ if not exist "node_modules" (
   )
 )
 
-echo [2/3] React production build olusturuluyor...
-call npm run build:react
+echo [2/3] Vite production build...
+call npx vite build
 if errorlevel 1 (
   echo HATA: Build basarisiz oldu.
   pause
@@ -26,4 +25,4 @@ if errorlevel 1 (
 
 echo [3/3] Electron baslatiliyor...
 echo.
-call electron .
+call npx electron .

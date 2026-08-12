@@ -11,8 +11,8 @@ export default function Header({ champions, version }) {
   const filtered = query.trim().length > 0 && champions
     ? champions
         .filter((c) =>
-          c.name.toLowerCase().includes(query.toLowerCase()) ||
-          c.id.toLowerCase().includes(query.toLowerCase())
+          (c.name || '').toLowerCase().includes(query.toLowerCase()) ||
+          (c.id || '').toLowerCase().includes(query.toLowerCase())
         )
         .slice(0, 8)
     : [];

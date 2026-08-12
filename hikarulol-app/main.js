@@ -4,6 +4,8 @@ const path = require('path');
 
 let mainWindow;
 
+const isDev = process.env.NODE_ENV === 'development';
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -23,20 +25,18 @@ function createWindow() {
     autoHideMenuBar: true,
   });
 
-  // Production: load built file; dev: load react-scripts dev server
-  const startUrl = process.env.NODE_ENV === 'development'
-    ? 'http://localhost:3000'
-    : `file://${path.join(__dirname, 'build', 'index.html')}`;
+  const startUrl = isDev
+    ? 'http://localhost:5173'
+    : `file://${path.join(__dirname, 'dist', 'index.html')}`;
 
   mainWindow.loadURL(startUrl);
 
-  // Open external links in default browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
   });
 
-  if (process.env.NODE_ENV === 'development') {
+  if (isDev) {
     mainWindow.webContents.openDevTools();
   }
 }
@@ -55,6 +55,5 @@ app.on('activate', () => {
   }
 });
 
-// IPC handlers
 ipcMain.handle('app:get-version', () => app.getVersion());
 ipcMain.handle('app:get-platform', () => process.platform);

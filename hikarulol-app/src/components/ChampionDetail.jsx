@@ -13,54 +13,47 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
   const [error, setError] = useState(null);
   const [activeRole, setActiveRole] = useState('top');
 
-  // Şampiyon verisini yükle
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
     setDetail(null);
 
-    // Önce elimizdeki champions listesinden bul
     const local = champions.find((c) => c.id === id);
+    const finalize = (data) => {
+      if (!cancelled) {
+        setDetail(data);
+        setLoading(false);
+      }
+    };
+
     if (local) {
-      // Detaylı veriyi çekmeyi dene, başarısız olursa local ile devam et
+      // Önce local data ile başla, detay gelirse güncelle
+      finalize(local);
       getChampionDetail(id, version)
-        .then((data) => {
-          if (!cancelled) setDetail(data || local);
-        })
-        .catch(() => {
-          if (!cancelled) setDetail(local);
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
-        });
+        .then((data) => { if (data && !cancelled) setDetail(data); })
+        .catch(() => {}); // hata olursa local kalsın
     } else {
-      // Listede yoksa direkt API'den çek
       getChampionDetail(id, version)
         .then((data) => {
           if (!cancelled) {
-            if (data) setDetail(data);
-            else setError('Şampiyon bulunamadı');
+            if (data) finalize(data);
+            else { setError('Şampiyon bulunamadı'); setLoading(false); }
           }
         })
         .catch((e) => {
-          if (!cancelled) setError(e.message);
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
+          if (!cancelled) { setError(e.message); setLoading(false); }
         });
     }
 
     return () => { cancelled = true; };
   }, [id, version, champions]);
 
-  // Build oluştur (memoize)
   const build = useMemo(() => {
     if (!detail || !items || items.length === 0) return null;
     return buildChampionBuild(detail, items);
   }, [detail, items]);
 
-  // Rün tree lookup map
   const runeMap = useMemo(() => {
     const m = new Map();
     if (!runes) return m;
@@ -82,7 +75,6 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
     return m;
   }, [runes]);
 
-  // Spell lookup map (id ve name ile)
   const spellMap = useMemo(() => {
     const m = new Map();
     if (!spells) return m;
@@ -123,37 +115,33 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
   const champSpells = detail.spells || [];
   const spellKeys = ['Q', 'W', 'E', 'R'];
 
-  // Tier/win rate (champion array'den al)
   const champInfo = champions.find((c) => c.id === detail.id);
-  const tier = champInfo?.tier || 'B';
-  const winRate = champInfo?.winRate || '50.0';
-  const pickRate = champInfo?.pickRate || '0.0';
-  const banRate = champInfo?.banRate || '0.0';
-  const games = champInfo?.games || 0;
+  const tier = champInfo?.tier || detail.tier || 'B';
+  const winRate = champInfo?.winRate || detail.winRate || '50.0';
+  const pickRate = champInfo?.pickRate || detail.pickRate || '0.0';
+  const banRate = champInfo?.banRate || detail.banRate || '0.0';
+  const games = champInfo?.games || detail.games || 0;
 
-  // Itemleri render et
   const renderItem = (item, idx) => {
     if (!item) return null;
     return (
       <div key={item.id || idx} style={{ position: 'relative' }}>
         <img
-          src={ImgURL.item(version, item.image.full)}
-          alt={item.name}
-          title={`${item.name} - ${item.gold?.total || 0}g`}
+          src={ImgURL.item(version, item.image?.full || '')}
+          alt={item.name || 'item'}
+          title={`${item.name || 'item'} - ${item.gold?.total || 0}g`}
           className="item-img"
           loading="lazy"
-          onError={(e) => { e.target.src = ImgURL.item(version, '1001.png'); }}
+          onError={(e) => { e.target.style.opacity = 0.3; }}
         />
       </div>
     );
   };
 
-  // Rün render
   const renderRune = (runeName) => {
     if (!runeName) return null;
     const rune = runeMap.get(runeName);
     if (!rune) {
-      // Bilinmeyen rune - placeholder göster
       return (
         <div
           className="rune-img"
@@ -170,7 +158,7 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
     return (
       <img
         src={rune.icon ? ImgURL.rune(rune.icon.replace(/^\//, '')) : ''}
-        alt={rune.name}
+        alt={rune.name || 'rune'}
         title={rune.name}
         className="rune-img"
         loading="lazy"
@@ -179,7 +167,6 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
     );
   };
 
-  // Spell render
   const renderSpell = (spellKey) => {
     if (!spellKey) return null;
     const spell = spellMap.get(spellKey);
@@ -199,8 +186,8 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
     }
     return (
       <img
-        src={ImgURL.spell(version, spell.image.full)}
-        alt={spell.name}
+        src={ImgURL.spell(version, spell.image?.full || '')}
+        alt={spell.name || 'spell'}
         title={spell.name}
         className="rune-img"
         loading="lazy"
@@ -213,15 +200,15 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
     <div className="champion-page">
       <div className="champion-header">
         <img
-          src={ImgURL.champion(version, detail.image.full)}
-          alt={detail.name}
+          src={ImgURL.champion(version, detail.image?.full || '')}
+          alt={detail.name || id}
           className="champion-portrait"
           onError={(e) => { e.target.style.opacity = 0.3; }}
         />
         <div className="champion-title">
-          <h1>{detail.name}</h1>
+          <h1>{detail.name || id}</h1>
           <div className="subtitle">
-            {detail.title} • {(detail.tags || []).join(' / ')}
+            {detail.title || ''} • {(detail.tags || []).join(' / ')}
           </div>
           <div className="champion-stats-bar">
             <div className="champion-stat">
@@ -247,7 +234,7 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
             </div>
             <div className="champion-stat">
               <span className="champion-stat-label">Oyun</span>
-              <span className="champion-stat-value">{games.toLocaleString()}</span>
+              <span className="champion-stat-value">{typeof games === 'number' ? games.toLocaleString() : games}</span>
             </div>
           </div>
           <div className="champion-role-tabs">
@@ -265,9 +252,7 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
       </div>
 
       <div className="champion-content">
-        {/* Sol panel: Rünler, Büyüler, Build, Yetenekler */}
         <div className="panel">
-          {/* RÜNLER */}
           <div className="panel-section">
             <div className="panel-title">⚡ Rünler</div>
             {build?.runes ? (
@@ -278,7 +263,6 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
                   Yan: <strong style={{ color: 'var(--accent-blue)' }}>{build.runes.secondary}</strong>
                 </div>
                 <div className="runes-row">
-                  {/* Primary tree ikonu */}
                   {(() => {
                     const tree = runeMap.get(build.runes.primary);
                     if (tree?.icon) {
@@ -294,12 +278,7 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
                     }
                     return null;
                   })()}
-                  {/* Keystone */}
-                  {renderRune(build.runes.keystone) && (
-                    <div style={{ position: 'relative' }}>
-                      {renderRune(build.runes.keystone)}
-                    </div>
-                  )}
+                  {renderRune(build.runes.keystone)}
                 </div>
                 <div className="runes-row" style={{ marginTop: 8 }}>
                   {renderRune(build.runes.slots?.[1])}
@@ -314,7 +293,6 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
             )}
           </div>
 
-          {/* SUMMONER BÜYÜLERİ */}
           <div className="panel-section">
             <div className="panel-title">📞 Summoner Büyüleri</div>
             <div className="runes-row">
@@ -324,7 +302,6 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
             </div>
           </div>
 
-          {/* ITEM BUILD */}
           <div className="panel-section">
             <div className="panel-title">⚔️ Core Build Sırası</div>
             {build && (build.boots || build.core?.length > 0) ? (
@@ -357,7 +334,6 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
             )}
           </div>
 
-          {/* YETENEK SIRASI */}
           <div className="panel-section">
             <div className="panel-title">🎯 Yetenek Sırası</div>
             {build?.skillOrder && (
@@ -382,7 +358,7 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
                   {champSpells.map((sp, i) => (
                     <img
                       key={i}
-                      src={ImgURL.spell(version, sp.image.full)}
+                      src={ImgURL.spell(version, sp.image?.full || '')}
                       alt={`${sp.name} (${spellKeys[i]})`}
                       title={`${spellKeys[i]} - ${sp.name}`}
                       className="item-img"
@@ -395,7 +371,6 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
           </div>
         </div>
 
-        {/* Sağ panel: Counter, Synergy, İpuçları */}
         <div className="panel">
           <div className="panel-section">
             <div className="panel-title">📊 Şampiyon Bilgisi</div>
@@ -436,7 +411,6 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
               {champions
                 .filter((c) => c.id !== detail.id)
                 .filter((c) => {
-                  // Tag'ine zıt olanlar
                   const opp = {
                     Fighter: ['Marksman', 'Mage'],
                     Tank: ['Marksman', 'Assassin'],
@@ -447,7 +421,7 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
                   };
                   return (c.tags || []).some((t) => {
                     const myTags = detail.tags || [];
-                    if (myTags.includes(t)) return false; // aynı tag synergy
+                    if (myTags.includes(t)) return false;
                     return (opp[t] || []).some((o) => myTags.includes(o));
                   });
                 })
@@ -459,13 +433,13 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
                     onClick={() => navigate(`/champions/${c.id}`)}
                   >
                     <img
-                      src={ImgURL.champion(version, c.image.full)}
+                      src={ImgURL.champion(version, c.image?.full || '')}
                       alt={c.name}
                       loading="lazy"
                     />
                     <span className="matchup-name">{c.name}</span>
                     <span className="matchup-rate bad">
-                      {(52 + (c.key % 8)).toFixed(1)}%
+                      {(52 + ((c.key || '0').split('').reduce((a, ch) => a + ch.charCodeAt(0), 0) % 8)).toFixed(1)}%
                     </span>
                   </div>
                 ))}
@@ -486,13 +460,13 @@ export default function ChampionDetail({ champions, items, runes, spells, versio
                     onClick={() => navigate(`/champions/${c.id}`)}
                   >
                     <img
-                      src={ImgURL.champion(version, c.image.full)}
+                      src={ImgURL.champion(version, c.image?.full || '')}
                       alt={c.name}
                       loading="lazy"
                     />
                     <span className="matchup-name">{c.name}</span>
                     <span className="matchup-rate good">
-                      {(54 + (c.key % 5)).toFixed(1)}%
+                      {(54 + ((c.key || '0').split('').reduce((a, ch) => a + ch.charCodeAt(0), 0) % 5)).toFixed(1)}%
                     </span>
                   </div>
                 ))}

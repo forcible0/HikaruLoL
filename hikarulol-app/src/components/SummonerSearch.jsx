@@ -8,7 +8,7 @@ export default function SummonerSearch({ version }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [keyStatus, setKeyStatus] = useState('unknown'); // valid | invalid | unknown
+  const [keyStatus, setKeyStatus] = useState('unknown');
 
   useEffect(() => {
     setError(null);
@@ -33,7 +33,7 @@ export default function SummonerSearch({ version }) {
       if (e.message.includes('API anahtarı') || e.message.includes('geçersiz') || e.message.includes('süresi dolmuş') || e.message.includes('reddedildi')) {
         setKeyStatus('invalid');
       } else if (e.message.includes('bulunamadı')) {
-        setKeyStatus('valid'); // key çalışıyor, sadece oyuncu yok
+        setKeyStatus('valid');
       } else if (e.message.includes('Rate limit')) {
         setKeyStatus('rate-limited');
       }

@@ -31,3 +31,7 @@ Thumbs.db
 
 # Electron
 out/
+
+# Tests
+test-*.cjs
+test-*.mjs

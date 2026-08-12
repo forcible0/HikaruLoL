@@ -26,7 +26,6 @@ export default function App() {
     async function load() {
       try {
         setLoadProgress(10);
-        // 1. Patch versiyonu
         let ver = '14.1.1';
         try {
           ver = await getLatestVersion();
@@ -37,7 +36,6 @@ export default function App() {
         setVersion(ver);
         setLoadProgress(25);
 
-        // 2. Şampiyonlar
         let champList = [];
         try {
           champList = await getAllChampions(ver);
@@ -49,7 +47,6 @@ export default function App() {
         setChampions(champList);
         setLoadProgress(50);
 
-        // 3. Item, rün, spell - paralel
         const [itemsData, runesData, spellsData] = await Promise.all([
           getAllItems(ver).catch(() => []),
           getAllRunes(ver).catch(() => []),
@@ -61,7 +58,6 @@ export default function App() {
         setSpells(spellsData);
         setLoadProgress(75);
 
-        // 4. Tier listesi (meta stats'tan)
         const tiered = await buildTierList(champList);
         if (cancelled) return;
         setTieredChampions(tiered);
@@ -116,7 +112,7 @@ export default function App() {
             {error}
           </div>
           <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 8 }}>
-            İnternet bağlantınızı kontrol edin. PC'de çalıştırıyorsanız antivirüs/firewall'ı kontrol edin.
+            İnternet bağlantınızı kontrol edin.
           </div>
           <button
             className="role-btn active"

@@ -1,5 +1,5 @@
 @echo off
-REM HikaruLoL - Windows .exe build scripti
+REM HikaruLoL - Windows .exe build
 echo ========================================
 echo   HikaruLoL - Windows EXE Build
 echo ========================================
@@ -15,16 +15,16 @@ if not exist "node_modules" (
   )
 )
 
-echo [2/3] React production build...
-call npm run build:react
+echo [2/3] Vite production build...
+call npx vite build
 if errorlevel 1 (
-  echo HATA: React build basarisiz oldu.
+  echo HATA: Vite build basarisiz oldu.
   pause
   exit /b 1
 )
 
 echo [3/3] Electron Builder ile .exe olusturuluyor...
-call npm run build:win
+call npx electron-builder --win --x64
 if errorlevel 1 (
   echo HATA: Electron build basarisiz oldu.
   pause
@@ -33,7 +33,6 @@ if errorlevel 1 (
 
 echo.
 echo ========================================
-echo  BUILD TAMAMLANDI!
-echo  dist/ klasorune bakin.
+echo  BUILD TAMAMLANDI! dist/ klasorune bakin.
 echo ========================================
 pause

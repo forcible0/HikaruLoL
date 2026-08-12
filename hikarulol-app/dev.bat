@@ -1,5 +1,5 @@
 @echo off
-REM HikaruLoL - Geliştirme modu başlatma (hot reload)
+REM HikaruLoL - Gelistirme modu (Vite + Electron)
 echo ========================================
 echo   HikaruLoL - Development Mode
 echo ========================================
@@ -10,6 +10,6 @@ if not exist "node_modules" (
   call npm install
 )
 
-echo [2/2] Dev server baslatiliyor (http://localhost:3000)...
+echo [2/2] Vite + Electron baslatiliyor...
 echo Tarayicinizda acin veya Electron penceresi acilacak.
 call npm run dev

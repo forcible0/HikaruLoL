@@ -34,7 +34,7 @@ export default function ChampionsList({ champions, version }) {
         const allowed = TAG_TO_ROLES[roleFilter] || [];
         return (c.tags || []).some((t) => allowed.includes(t));
       })
-      .filter((c) => letterFilter === 'all' || c.name?.[0]?.toUpperCase() === letterFilter)
+      .filter((c) => letterFilter === 'all' || (c.name || '?')[0]?.toUpperCase() === letterFilter)
       .sort((a, b) => {
         const tierOrder = { S: 0, A: 1, B: 2, C: 3, D: 4, F: 5 };
         const ta = tierOrder[a.tier] ?? 9;

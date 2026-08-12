@@ -29,7 +29,7 @@ export default function TierList({ champions, version }) {
 
     if (roleFilter !== 'all') {
       const allowed = TAG_TO_ROLES[roleFilter] || [];
-      filtered = filtered.filter((c) => c.tags?.some((t) => allowed.includes(t)));
+      filtered = filtered.filter((c) => (c.tags || []).some((t) => allowed.includes(t)));
     }
 
     return [...filtered].sort((a, b) => {
@@ -37,7 +37,7 @@ export default function TierList({ champions, version }) {
       const ta = tierOrder[a.tier] ?? 9;
       const tb = tierOrder[b.tier] ?? 9;
       if (ta !== tb) return ta - tb;
-      return parseFloat(b.winRate) - parseFloat(a.winRate);
+      return parseFloat(b.winRate || 0) - parseFloat(a.winRate || 0);
     });
   }, [champions, roleFilter]);
 
